@@ -29,7 +29,6 @@
         }
 
         .container { width: 100%; max-width: 900px; }
-
         header { text-align: center; margin-bottom: 40px; }
         h1 { font-weight: 300; letter-spacing: 2px; color: var(--primary-color); margin-bottom: 10px; }
 
@@ -66,31 +65,28 @@
         }
 
         .category-title { font-size: 1.2rem; font-weight: 600; color: var(--primary-color); display: flex; align-items: center; gap: 10px; }
-
         .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; outline: none; transition: 0.3s; }
+        input { padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; outline: none; transition: 0.3s; width: 100%;}
         input:focus { border-color: var(--accent-color); }
         input.name-input, .edit-name { flex: 2; }
         input.price-input, .edit-price { flex: 1; }
 
         button { cursor: pointer; border: none; border-radius: 6px; transition: 0.3s; background: none; }
-        .btn-add { background: var(--primary-color); color: white; padding: 10px 20px; }
+        .btn-add { background: var(--primary-color); color: white; padding: 10px 20px; white-space: nowrap; }
         .btn-add:hover { background: #3e5871; }
 
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; color: var(--text-sub); font-size: 0.85rem; padding: 10px; }
         td { padding: 12px 10px; border-bottom: 1px solid #eee; }
 
-        .col-action { text-align: right; min-width: 100px; }
-        .btn-edit { color: var(--text-sub); margin-right: 10px; font-size: 1rem; }
-        .btn-edit:hover { color: var(--primary-color); }
+        .col-action { text-align: right; min-width: 120px; }
+        .btn-edit { color: var(--text-sub); margin-right: 10px; font-size: 0.9rem; }
         .btn-delete { color: #ccc; font-size: 1.2rem; }
-        .btn-delete:hover { color: var(--danger); }
         .btn-save { color: var(--success); font-weight: bold; margin-right: 10px; }
 
+        .sync-status { font-size: 0.8rem; text-align: center; margin-top: -30px; margin-bottom: 20px; color: var(--text-sub); transition: 0.5s;}
         .empty-hint { text-align: center; color: #ccc; padding: 20px; font-style: italic; }
-        .sync-status { font-size: 0.8rem; text-align: center; margin-top: -30px; margin-bottom: 20px; color: var(--text-sub); }
-
+        
         @media (max-width: 600px) { .input-group { flex-direction: column; } }
     </style>
 </head>
@@ -102,7 +98,7 @@
         <p style="color: var(--text-sub)">細心規劃，打造理想的生活空間</p>
     </header>
 
-    <div class="sync-status" id="sync-status">雲端同步狀態：待機</div>
+    <div class="sync-status" id="sync-status">雲端同步狀態：正在初始化...</div>
 
     <div class="summary-dashboard">
         <div class="summary-item">
@@ -120,71 +116,67 @@
     </div>
 
     <section class="category-card" data-category="engineering">
-        <div class="category-header">
-            <div class="category-title"><span>🏗️</span> 裝修工程預算</div>
-            <div class="subtotal">小計: <span id="subtotal-engineering">$ 0</span></div>
-        </div>
+        <div class="category-header"><div class="category-title"><span>🏗️</span> 裝修工程預算</div><div class="subtotal">小計: <span id="subtotal-engineering">$ 0</span></div></div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('engineering')">新增項目</button>
         </div>
-        <table id="table-engineering">
-            <thead><tr><th>項目名稱</th><th>預估金額</th><th class="col-action">操作</th></tr></thead>
-            <tbody></tbody>
-        </table>
+        <table id="table-engineering"><thead><tr><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
     </section>
 
     <section class="category-card" data-category="appliances">
-        <div class="category-header">
-            <div class="category-title"><span>📺</span> 家電設備預算</div>
-            <div class="subtotal">小計: <span id="subtotal-appliances">$ 0</span></div>
-        </div>
+        <div class="category-header"><div class="category-title"><span>📺</span> 家電設備預算</div><div class="subtotal">小計: <span id="subtotal-appliances">$ 0</span></div></div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('appliances')">新增項目</button>
         </div>
-        <table id="table-appliances">
-            <thead><tr><th>項目名稱</th><th>預估金額</th><th class="col-action">操作</th></tr></thead>
-            <tbody></tbody>
-        </table>
+        <table id="table-appliances"><thead><tr><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
     </section>
 
     <section class="category-card" data-category="furniture">
-        <div class="category-header">
-            <div class="category-title"><span>🛋️</span> 傢俱軟裝預算</div>
-            <div class="subtotal">小計: <span id="subtotal-furniture">$ 0</span></div>
-        </div>
+        <div class="category-header"><div class="category-title"><span>🛋️</span> 傢俱軟裝預算</div><div class="subtotal">小計: <span id="subtotal-furniture">$ 0</span></div></div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('furniture')">新增項目</button>
         </div>
-        <table id="table-furniture">
-            <thead><tr><th>項目名稱</th><th>預估金額</th><th class="col-action">操作</th></tr></thead>
-            <tbody></tbody>
-        </table>
+        <table id="table-furniture"><thead><tr><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
     </section>
 </div>
 
 <script>
-    // 1. 請在此貼上你的 Google Apps Script 部署網址
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0MvelMerRnzM8v7yN7RA-OcA4e0pSl9MO20FOSDJIbGml2yCiAz1qxSpvnVfDucbb/exec';
 
-    let data = {
-        engineering: [],
-        appliances: [],
-        furniture: []
-    };
+    let data = { engineering: [], appliances: [], furniture: [] };
 
-    // 同步函式
+    // 初始化：從雲端抓取資料
+    async function initData() {
+        const statusEl = document.getElementById('sync-status');
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL);
+            const cloudData = await response.json();
+            
+            data = { engineering: [], appliances: [], furniture: [] };
+            cloudData.forEach(item => {
+                if (data[item.category]) {
+                    data[item.category].push({ id: item.id, name: item.name, price: parseFloat(item.price) });
+                }
+            });
+            statusEl.innerText = '雲端同步狀態：資料載入成功';
+            statusEl.style.color = 'var(--success)';
+        } catch (e) {
+            statusEl.innerText = '雲端同步狀態：載入失敗 (請確認 GAS 是否部署為 doGet)';
+            statusEl.style.color = 'var(--danger)';
+        }
+        render();
+    }
+
     async function syncToCloud(action, category, item) {
-        if (GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL') return;
-        
         const statusEl = document.getElementById('sync-status');
         statusEl.innerText = '雲端同步中...';
-        statusEl.style.color = '#d4af37';
+        statusEl.style.color = 'var(--accent-color)';
 
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
@@ -192,11 +184,11 @@
                 mode: 'no-cors',
                 body: JSON.stringify({ action, category, ...item })
             });
-            statusEl.innerText = '雲端同步狀態：已更新於 ' + new Date().toLocaleTimeString();
-            statusEl.style.color = '#27ae60';
+            statusEl.innerText = '雲端同步狀態：已同步於 ' + new Date().toLocaleTimeString();
+            statusEl.style.color = 'var(--success)';
         } catch (e) {
-            statusEl.innerText = '雲端同步失敗';
-            statusEl.style.color = '#e74c3c';
+            statusEl.innerText = '同步失敗';
+            statusEl.style.color = 'var(--danger)';
         }
     }
 
@@ -204,31 +196,22 @@
         const card = document.querySelector(`section[data-category="${category}"]`);
         const nameInp = card.querySelector('.name-input');
         const priceInp = card.querySelector('.price-input');
+        if (!nameInp.value || !priceInp.value) return;
 
-        if (!nameInp.value || !priceInp.value) return alert('請輸入完整資訊');
-
-        const newItem = {
-            id: Date.now(),
-            name: nameInp.value,
-            price: parseFloat(priceInp.value)
-        };
-
+        const newItem = { id: Date.now(), name: nameInp.value, price: parseFloat(priceInp.value) };
         data[category].push(newItem);
         syncToCloud('ADD', category, newItem);
-        
-        nameInp.value = '';
-        priceInp.value = '';
+        nameInp.value = ''; priceInp.value = '';
         render();
     }
 
     function deleteItem(category, id) {
-        if(!confirm('確定要刪除此項嗎？')) return;
+        if(!confirm('確定要刪除嗎？')) return;
         data[category] = data[category].filter(i => i.id !== id);
         syncToCloud('DELETE', category, { id });
         render();
     }
 
-    // 進入編輯模式
     function enterEditMode(category, id) {
         const item = data[category].find(i => i.id === id);
         const row = document.getElementById(`row-${id}`);
@@ -237,60 +220,39 @@
             <td><input type="number" class="edit-price" value="${item.price}"></td>
             <td class="col-action">
                 <button class="btn-save" onclick="saveEdit('${category}', ${id})">儲存</button>
-                <button class="btn-delete" onclick="render()">取消</button>
+                <button class="btn-delete" onclick="render()">✘</button>
             </td>
         `;
     }
 
-    // 儲存編輯內容
     function saveEdit(category, id) {
         const row = document.getElementById(`row-${id}`);
         const newName = row.querySelector('.edit-name').value;
         const newPrice = parseFloat(row.querySelector('.edit-price').value);
-
         const item = data[category].find(i => i.id === id);
-        item.name = newName;
-        item.price = newPrice;
-
+        item.name = newName; item.price = newPrice;
         syncToCloud('UPDATE', category, item);
         render();
     }
 
-    function formatCurrency(num) {
-        return '$ ' + num.toLocaleString();
-    }
+    function formatCurrency(num) { return '$ ' + Math.round(num).toLocaleString(); }
 
     function render() {
         let grandTotal = 0;
         let subtotalMap = { engineering: 0, appliances: 0, furniture: 0 };
-
         for (let category in data) {
             const tbody = document.querySelector(`#table-${category} tbody`);
-            tbody.innerHTML = '';
-
-            if (data[category].length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="empty-hint">尚無項目</td></tr>`;
-            }
-
+            tbody.innerHTML = data[category].length ? '' : '<tr><td colspan="3" class="empty-hint">尚無項目</td></tr>';
             data[category].forEach(item => {
                 subtotalMap[category] += item.price;
                 const tr = document.createElement('tr');
                 tr.id = `row-${item.id}`;
-                tr.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>${formatCurrency(item.price)}</td>
-                    <td class="col-action">
-                        <button class="btn-edit" onclick="enterEditMode('${category}', ${item.id})">✎ 編輯</button>
-                        <button class="btn-delete" onclick="deleteItem('${category}', ${item.id})">×</button>
-                    </td>
-                `;
+                tr.innerHTML = `<td>${item.name}</td><td>${formatCurrency(item.price)}</td><td class="col-action"><button class="btn-edit" onclick="enterEditMode('${category}', ${item.id})">✎</button><button class="btn-delete" onclick="deleteItem('${category}', ${item.id})">×</button></td>`;
                 tbody.appendChild(tr);
             });
-
             document.getElementById(`subtotal-${category}`).innerText = formatCurrency(subtotalMap[category]);
             grandTotal += subtotalMap[category];
         }
-
         document.getElementById('grand-total').innerText = formatCurrency(grandTotal);
         const engPercent = grandTotal > 0 ? Math.round((subtotalMap.engineering / grandTotal) * 100) : 0;
         const otherPercent = grandTotal > 0 ? Math.round(((subtotalMap.appliances + subtotalMap.furniture) / grandTotal) * 100) : 0;
@@ -298,9 +260,7 @@
         document.getElementById('percent-other').innerText = otherPercent + '%';
     }
 
-    render();
+    initData(); // 啟動抓取雲端資料
 </script>
-
 </body>
 </html>
-

@@ -19,39 +19,55 @@
             --shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
 
+        /* 關鍵修正：確保 padding 不會撐破寬度 */
+        * { box-sizing: border-box; }
+
         body {
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
-            padding: 40px 20px;
+            padding: 20px 15px; /* 稍微減小邊界 */
             display: flex;
             justify-content: center;
         }
 
         .container { width: 100%; max-width: 900px; }
-        header { text-align: center; margin-bottom: 40px; }
-        h1 { font-weight: 300; letter-spacing: 2px; color: var(--primary-color); margin-bottom: 10px; }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { font-weight: 300; letter-spacing: 2px; color: var(--primary-color); margin-bottom: 10px; font-size: 1.6rem; }
 
         .summary-dashboard {
             background: var(--primary-color);
             color: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: var(--border-radius);
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(2, 1fr); /* 手機預設 2x2 */
+            gap: 15px;
+            margin-bottom: 25px;
             box-shadow: var(--shadow);
         }
 
-        .summary-item .label { font-size: 0.9rem; opacity: 0.8; margin-bottom: 5px; }
-        .summary-item .amount { font-size: 1.5rem; font-weight: 600; color: var(--accent-color); }
+        .summary-item .label { font-size: 0.75rem; opacity: 0.8; margin-bottom: 5px; }
+        .summary-item .amount { font-size: 1.2rem; font-weight: 600; color: var(--accent-color); word-break: break-all; }
+        
+        .budget-input {
+            background: rgba(255,255,255,0.1);
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+            width: 100%;
+            padding: 5px 0;
+            border: none;
+            border-bottom: 1px solid var(--accent-color);
+            outline: none;
+        }
+        .remaining-negative { color: var(--danger) !important; }
 
         .category-card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 25px;
+            padding: 20px;
             margin-bottom: 25px;
             box-shadow: var(--shadow);
         }
@@ -63,44 +79,68 @@
             border-bottom: 2px solid #f1f1f1;
             padding-bottom: 15px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-        .category-title { font-size: 1.2rem; font-weight: 600; color: var(--primary-color); display: flex; align-items: center; gap: 10px; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; outline: none; transition: 0.3s; width: 100%;}
-        input:focus { border-color: var(--accent-color); }
-        input.name-input, .edit-name { flex: 2; }
-        input.price-input, .edit-price { flex: 1; }
+        .category-title { font-size: 1.1rem; font-weight: 600; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
+        .subtotal { font-size: 0.9rem; color: var(--text-sub); }
 
-        button { cursor: pointer; border: none; border-radius: 6px; transition: 0.3s; background: none; }
-        .btn-add { background: var(--primary-color); color: white; padding: 10px 20px; white-space: nowrap; }
+        /* 修正輸入區域排版 */
+        .input-group { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            width: 100%;
+        }
+        input { 
+            padding: 10px 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            outline: none; 
+            transition: 0.3s;
+            font-size: 14px;
+        }
+        input:focus { border-color: var(--accent-color); }
+        .name-input { flex: 3; min-width: 0; } /* min-width:0 防止 flex 項目撐破 */
+        .price-input { flex: 1.5; min-width: 0; }
+
+        button { cursor: pointer; border: none; border-radius: 6px; transition: 0.3s; }
+        .btn-add { 
+            background: var(--primary-color); 
+            color: white; 
+            padding: 10px 15px; 
+            white-space: nowrap;
+            flex: 1;
+        }
         .btn-add:hover { background: #3e5871; }
 
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; color: var(--text-sub); font-size: 0.85rem; padding: 10px; }
-        td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+        .table-wrapper { width: 100%; overflow-x: auto; } /* 增加表格捲動保護 */
+        table { width: 100%; border-collapse: collapse; min-width: 300px; }
+        th { text-align: left; color: var(--text-sub); font-size: 0.8rem; padding: 10px 5px; }
+        td { padding: 12px 5px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
 
-        /* 拖曳把手樣式 */
-        .drag-handle {
-            cursor: grab;
-            color: #ccc;
-            padding-right: 10px;
-            font-size: 1.2rem;
-            user-select: none;
-            width: 20px;
+        .drag-handle { cursor: grab; color: #ccc; padding-right: 8px; font-size: 1rem; width: 25px; }
+        .col-action { text-align: right; min-width: 80px; }
+        .btn-edit, .btn-delete { padding: 5px; background: none; border: none; }
+        .btn-edit { color: var(--text-sub); margin-right: 5px; }
+        .btn-delete { color: #ccc; }
+
+        .sync-status { font-size: 0.75rem; text-align: center; margin-top: -20px; margin-bottom: 15px; color: var(--text-sub); }
+
+        /* 手機版 RWD 調整 */
+        @media (max-width: 600px) {
+            .summary-dashboard { grid-template-columns: 1fr 1fr; }
+            .input-group { flex-direction: column; gap: 8px; }
+            .name-input, .price-input, .btn-add { width: 100%; flex: none; }
+            .edit-name, .edit-price { width: 100%; margin-bottom: 5px; }
+            .col-action { display: flex; flex-direction: column; align-items: flex-end; }
         }
-        .drag-handle:active { cursor: grabbing; }
-        .sortable-ghost { opacity: 0.3; background: #f0f0f0 !important; }
 
-        .col-action { text-align: right; min-width: 120px; }
-        .btn-edit { color: var(--text-sub); margin-right: 10px; font-size: 0.9rem; }
-        .btn-delete { color: #ccc; font-size: 1.2rem; }
-        .btn-save { color: var(--success); font-weight: bold; margin-right: 10px; }
-
-        .sync-status { font-size: 0.8rem; text-align: center; margin-top: -30px; margin-bottom: 20px; color: var(--text-sub); transition: 0.5s;}
-        .empty-hint { text-align: center; color: #ccc; padding: 20px; font-style: italic; }
-        
-        @media (max-width: 600px) { .input-group { flex-direction: column; } }
+        @media (min-width: 768px) {
+            .summary-dashboard { grid-template-columns: repeat(4, 1fr); }
+            h1 { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
@@ -108,68 +148,97 @@
 <div class="container">
     <header>
         <h1>庭林群青 裝潢預算書</h1>
-        <p style="color: var(--text-sub)">細心規劃，打造理想的生活空間</p>
+        <p style="color: var(--text-sub); font-size: 0.9rem;">細心規劃，打造理想的生活空間</p>
     </header>
 
-    <div class="sync-status" id="sync-status">雲端同步狀態：正在初始化...</div>
+    <div class="sync-status" id="sync-status">正在載入數據...</div>
 
     <div class="summary-dashboard">
         <div class="summary-item">
-            <div class="label">總預算支出</div>
+            <div class="label">🎯 預算目標</div>
+            <input type="number" id="budget-goal" class="budget-input" placeholder="0" oninput="updateTotalsOnly()">
+        </div>
+        <div class="summary-item">
+            <div class="label">💰 累計支出</div>
             <div class="amount" id="grand-total">$ 0</div>
         </div>
         <div class="summary-item">
-            <div class="label">工程佔比</div>
-            <div class="amount" id="percent-eng">0%</div>
+            <div class="label">⚖️ 剩餘預算</div>
+            <div class="amount" id="remaining-budget">$ 0</div>
         </div>
         <div class="summary-item">
-            <div class="label">家電/傢俱佔比</div>
-            <div class="amount" id="percent-other">0%</div>
+            <div class="label">📊 工程佔比</div>
+            <div class="amount" id="percent-eng">0%</div>
         </div>
     </div>
 
     <section class="category-card" data-category="engineering">
-        <div class="category-header"><div class="category-title"><span>🏗️</span> 裝修工程預算</div><div class="subtotal">小計: <span id="subtotal-engineering">$ 0</span></div></div>
+        <div class="category-header">
+            <div class="category-title"><span>🏗️</span> 裝修工程預算</div>
+            <div class="subtotal">小計: <span id="subtotal-engineering">$ 0</span></div>
+        </div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
             <input type="number" class="price-input" placeholder="金額">
-            <button class="btn-add" onclick="addItem('engineering')">新增項目</button>
+            <button class="btn-add" onclick="addItem('engineering')">新增</button>
         </div>
-        <table id="table-engineering"><thead><tr><th style="width: 30px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
+        <div class="table-wrapper">
+            <table id="table-engineering">
+                <thead><tr><th style="width: 25px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </section>
 
     <section class="category-card" data-category="appliances">
-        <div class="category-header"><div class="category-title"><span>📺</span> 家電設備預算</div><div class="subtotal">小計: <span id="subtotal-appliances">$ 0</span></div></div>
+        <div class="category-header">
+            <div class="category-title"><span>📺</span> 家電設備預算</div>
+            <div class="subtotal">小計: <span id="subtotal-appliances">$ 0</span></div>
+        </div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
             <input type="number" class="price-input" placeholder="金額">
-            <button class="btn-add" onclick="addItem('appliances')">新增項目</button>
+            <button class="btn-add" onclick="addItem('appliances')">新增</button>
         </div>
-        <table id="table-appliances"><thead><tr><th style="width: 30px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
+        <div class="table-wrapper">
+            <table id="table-appliances">
+                <thead><tr><th style="width: 25px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </section>
 
     <section class="category-card" data-category="furniture">
-        <div class="category-header"><div class="category-title"><span>🛋️</span> 傢俱軟裝預算</div><div class="subtotal">小計: <span id="subtotal-furniture">$ 0</span></div></div>
+        <div class="category-header">
+            <div class="category-title"><span>🛋️</span> 傢俱軟裝預算</div>
+            <div class="subtotal">小計: <span id="subtotal-furniture">$ 0</span></div>
+        </div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
             <input type="number" class="price-input" placeholder="金額">
-            <button class="btn-add" onclick="addItem('furniture')">新增項目</button>
+            <button class="btn-add" onclick="addItem('furniture')">新增</button>
         </div>
-        <table id="table-furniture"><thead><tr><th style="width: 30px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
+        <div class="table-wrapper">
+            <table id="table-furniture">
+                <thead><tr><th style="width: 25px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </section>
 </div>
 
 <script>
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0MvelMerRnzM8v7yN7RA-OcA4e0pSl9MO20FOSDJIbGml2yCiAz1qxSpvnVfDucbb/exec';
-
     let data = { engineering: [], appliances: [], furniture: [] };
 
     async function initData() {
+        const savedBudget = localStorage.getItem('decoration_budget_goal');
+        if (savedBudget) document.getElementById('budget-goal').value = savedBudget;
+
         const statusEl = document.getElementById('sync-status');
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL);
             const cloudData = await response.json();
-            
             data = { engineering: [], appliances: [], furniture: [] };
             cloudData.forEach(item => {
                 if (data[item.category]) {
@@ -191,18 +260,15 @@
             const el = document.querySelector(`#table-${category} tbody`);
             Sortable.create(el, {
                 animation: 150,
-                handle: '.drag-handle', // 限制只有點擊此 class 才能拖曳
+                handle: '.drag-handle',
                 ghostClass: 'sortable-ghost',
                 onEnd: function (evt) {
                     if (evt.oldIndex === evt.newIndex) return;
-
                     const categoryData = data[category];
                     const item = categoryData.splice(evt.oldIndex, 1)[0];
                     categoryData.splice(evt.newIndex, 0, item);
-                    
                     updateTotalsOnly();
-                    const idOrder = categoryData.map(i => i.id);
-                    syncToCloud('REORDER', category, { idOrder: idOrder });
+                    syncToCloud('REORDER', category, { idOrder: categoryData.map(i => i.id) });
                 },
             });
         });
@@ -212,14 +278,13 @@
         const statusEl = document.getElementById('sync-status');
         statusEl.innerText = '雲端同步中...';
         statusEl.style.color = 'var(--accent-color)';
-
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify({ action, category, ...item })
             });
-            statusEl.innerText = '雲端同步狀態：已同步於 ' + new Date().toLocaleTimeString();
+            statusEl.innerText = '同步完成：' + new Date().toLocaleTimeString();
             statusEl.style.color = 'var(--success)';
         } catch (e) {
             statusEl.innerText = '同步失敗';
@@ -252,10 +317,10 @@
         const row = document.getElementById(`row-${id}`);
         row.innerHTML = `
             <td class="drag-handle">☰</td>
-            <td><input type="text" class="edit-name" value="${item.name}"></td>
-            <td><input type="number" class="edit-price" value="${item.price}"></td>
+            <td><input type="text" class="edit-name" style="width:100%" value="${item.name}"></td>
+            <td><input type="number" class="edit-price" style="width:100%" value="${item.price}"></td>
             <td class="col-action">
-                <button class="btn-save" onclick="saveEdit('${category}', ${id})">儲存</button>
+                <button class="btn-save" style="color:var(--success)" onclick="saveEdit('${category}', ${id})">儲存</button>
                 <button class="btn-delete" onclick="render()">✘</button>
             </td>
         `;
@@ -271,7 +336,7 @@
         render();
     }
 
-    function formatCurrency(num) { return '$ ' + Math.round(num).toLocaleString(); }
+    function formatCurrency(num) { return '$' + Math.round(num).toLocaleString(); }
 
     function updateTotalsOnly() {
         let grandTotal = 0;
@@ -282,10 +347,17 @@
             grandTotal += subtotalMap[category];
         }
         document.getElementById('grand-total').innerText = formatCurrency(grandTotal);
+        
+        const budgetGoal = parseFloat(document.getElementById('budget-goal').value) || 0;
+        localStorage.setItem('decoration_budget_goal', budgetGoal);
+        
+        const remaining = budgetGoal - grandTotal;
+        const remainingEl = document.getElementById('remaining-budget');
+        remainingEl.innerText = formatCurrency(remaining);
+        remainingEl.className = 'amount' + (remaining < 0 ? ' remaining-negative' : '');
+
         const engPercent = grandTotal > 0 ? Math.round((subtotalMap.engineering / grandTotal) * 100) : 0;
-        const otherPercent = grandTotal > 0 ? Math.round(((subtotalMap.appliances + subtotalMap.furniture) / grandTotal) * 100) : 0;
         document.getElementById('percent-eng').innerText = engPercent + '%';
-        document.getElementById('percent-other').innerText = otherPercent + '%';
     }
 
     function render() {
@@ -295,7 +367,6 @@
             data[category].forEach(item => {
                 const tr = document.createElement('tr');
                 tr.id = `row-${item.id}`;
-                tr.setAttribute('data-id', item.id);
                 tr.innerHTML = `
                     <td class="drag-handle">☰</td>
                     <td>${item.name}</td>

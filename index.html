@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>裝潢預算管理大師 - 雲端同步版</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root {
             --bg-color: #f8f9fa;
@@ -79,6 +80,18 @@
         th { text-align: left; color: var(--text-sub); font-size: 0.85rem; padding: 10px; }
         td { padding: 12px 10px; border-bottom: 1px solid #eee; }
 
+        /* 拖曳把手樣式 */
+        .drag-handle {
+            cursor: grab;
+            color: #ccc;
+            padding-right: 10px;
+            font-size: 1.2rem;
+            user-select: none;
+            width: 20px;
+        }
+        .drag-handle:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.3; background: #f0f0f0 !important; }
+
         .col-action { text-align: right; min-width: 120px; }
         .btn-edit { color: var(--text-sub); margin-right: 10px; font-size: 0.9rem; }
         .btn-delete { color: #ccc; font-size: 1.2rem; }
@@ -122,7 +135,7 @@
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('engineering')">新增項目</button>
         </div>
-        <table id="table-engineering"><thead><tr><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
+        <table id="table-engineering"><thead><tr><th style="width: 30px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
     </section>
 
     <section class="category-card" data-category="appliances">
@@ -132,7 +145,7 @@
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('appliances')">新增項目</button>
         </div>
-        <table id="table-appliances"><thead><tr><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
+        <table id="table-appliances"><thead><tr><th style="width: 30px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
     </section>
 
     <section class="category-card" data-category="furniture">
@@ -142,7 +155,7 @@
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('furniture')">新增項目</button>
         </div>
-        <table id="table-furniture"><thead><tr><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
+        <table id="table-furniture"><thead><tr><th style="width: 30px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead><tbody></tbody></table>
     </section>
 </div>
 
@@ -151,7 +164,6 @@
 
     let data = { engineering: [], appliances: [], furniture: [] };
 
-    // 初始化：從雲端抓取資料
     async function initData() {
         const statusEl = document.getElementById('sync-status');
         try {
@@ -167,10 +179,33 @@
             statusEl.innerText = '雲端同步狀態：資料載入成功';
             statusEl.style.color = 'var(--success)';
         } catch (e) {
-            statusEl.innerText = '雲端同步狀態：載入失敗 (請確認 GAS 是否部署為 doGet)';
+            statusEl.innerText = '雲端同步狀態：載入失敗';
             statusEl.style.color = 'var(--danger)';
         }
         render();
+        initSortable();
+    }
+
+    function initSortable() {
+        ['engineering', 'appliances', 'furniture'].forEach(category => {
+            const el = document.querySelector(`#table-${category} tbody`);
+            Sortable.create(el, {
+                animation: 150,
+                handle: '.drag-handle', // 限制只有點擊此 class 才能拖曳
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    if (evt.oldIndex === evt.newIndex) return;
+
+                    const categoryData = data[category];
+                    const item = categoryData.splice(evt.oldIndex, 1)[0];
+                    categoryData.splice(evt.newIndex, 0, item);
+                    
+                    updateTotalsOnly();
+                    const idOrder = categoryData.map(i => i.id);
+                    syncToCloud('REORDER', category, { idOrder: idOrder });
+                },
+            });
+        });
     }
 
     async function syncToCloud(action, category, item) {
@@ -216,6 +251,7 @@
         const item = data[category].find(i => i.id === id);
         const row = document.getElementById(`row-${id}`);
         row.innerHTML = `
+            <td class="drag-handle">☰</td>
             <td><input type="text" class="edit-name" value="${item.name}"></td>
             <td><input type="number" class="edit-price" value="${item.price}"></td>
             <td class="col-action">
@@ -237,19 +273,11 @@
 
     function formatCurrency(num) { return '$ ' + Math.round(num).toLocaleString(); }
 
-    function render() {
+    function updateTotalsOnly() {
         let grandTotal = 0;
         let subtotalMap = { engineering: 0, appliances: 0, furniture: 0 };
         for (let category in data) {
-            const tbody = document.querySelector(`#table-${category} tbody`);
-            tbody.innerHTML = data[category].length ? '' : '<tr><td colspan="3" class="empty-hint">尚無項目</td></tr>';
-            data[category].forEach(item => {
-                subtotalMap[category] += item.price;
-                const tr = document.createElement('tr');
-                tr.id = `row-${item.id}`;
-                tr.innerHTML = `<td>${item.name}</td><td>${formatCurrency(item.price)}</td><td class="col-action"><button class="btn-edit" onclick="enterEditMode('${category}', ${item.id})">✎</button><button class="btn-delete" onclick="deleteItem('${category}', ${item.id})">×</button></td>`;
-                tbody.appendChild(tr);
-            });
+            data[category].forEach(item => subtotalMap[category] += item.price);
             document.getElementById(`subtotal-${category}`).innerText = formatCurrency(subtotalMap[category]);
             grandTotal += subtotalMap[category];
         }
@@ -260,7 +288,29 @@
         document.getElementById('percent-other').innerText = otherPercent + '%';
     }
 
-    initData(); // 啟動抓取雲端資料
+    function render() {
+        for (let category in data) {
+            const tbody = document.querySelector(`#table-${category} tbody`);
+            tbody.innerHTML = data[category].length ? '' : '<tr><td colspan="4" class="empty-hint">尚無項目</td></tr>';
+            data[category].forEach(item => {
+                const tr = document.createElement('tr');
+                tr.id = `row-${item.id}`;
+                tr.setAttribute('data-id', item.id);
+                tr.innerHTML = `
+                    <td class="drag-handle">☰</td>
+                    <td>${item.name}</td>
+                    <td>${formatCurrency(item.price)}</td>
+                    <td class="col-action">
+                        <button class="btn-edit" onclick="enterEditMode('${category}', ${item.id})">✎</button>
+                        <button class="btn-delete" onclick="deleteItem('${category}', ${item.id})">×</button>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        updateTotalsOnly();
+    }
+
+    initData();
 </script>
 </body>
 </html>

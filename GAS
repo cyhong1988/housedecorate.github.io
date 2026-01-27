@@ -2,53 +2,50 @@ function doPost(e) {
   var params = JSON.parse(e.postData.contents);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheets()[0];
-  var rows = sheet.getDataRange().getValues(); // 取得現有所有資料
+  var rows = sheet.getDataRange().getValues(); 
   var action = params.action;
 
-  // 處理排序邏輯
+  // 處理排序邏輯 (REORDER)
   if (action === 'REORDER') {
     var idOrder = params.idOrder; 
-    var header = rows.shift(); // 移除並取得標題列
+    var header = rows.shift(); 
     
     var sortedData = [];
-    // 1. 先根據傳入的 ID 順序，放入該分類排序後的資料
     idOrder.forEach(function(id) {
       var row = rows.find(function(r) { return r[0].toString() == id.toString(); });
       if (row) sortedData.push(row);
     });
     
-    // 2. 補上不屬於該分類的其他資料，確保資料完整
     rows.forEach(function(row) {
       if (row[1] !== params.category) {
         sortedData.push(row);
       }
     });
 
-    // 3. 清除並重新寫入整張表
     sheet.clearContents();
     sheet.appendRow(header);
     if (sortedData.length > 0) {
       sheet.getRange(2, 1, sortedData.length, sortedData[0].length).setValues(sortedData);
     }
-    
     return ContentService.createTextOutput("Order Updated");
   }
   
-  // 處理新增邏輯
+  // 處理新增邏輯 (ADD) - 新增網址到第 5 欄
   if (action === 'ADD') {
-    sheet.appendRow([params.id, params.category, params.name, params.price]);
+    sheet.appendRow([params.id, params.category, params.name, params.price, params.url]);
   } 
-  // 處理更新邏輯
+  // 處理更新邏輯 (UPDATE)
   else if (action === 'UPDATE') {
     for (var i = 0; i < rows.length; i++) {
       if (rows[i][0].toString() == params.id.toString()) { 
-        sheet.getRange(i + 1, 3).setValue(params.name);  // 第三欄：名稱
-        sheet.getRange(i + 1, 4).setValue(params.price); // 第四欄：金額
+        sheet.getRange(i + 1, 3).setValue(params.name);  // C 欄：名稱
+        sheet.getRange(i + 1, 4).setValue(params.price); // D 欄：金額
+        sheet.getRange(i + 1, 5).setValue(params.url);   // E 欄：網址 (新增)
         break;
       }
     }
   } 
-  // 處理刪除邏輯
+  // 處理刪除邏輯 (DELETE)
   else if (action === 'DELETE') {
     for (var i = rows.length - 1; i >= 0; i--) {
       if (rows[i][0].toString() == params.id.toString()) {
@@ -71,7 +68,8 @@ function doGet() {
       id: rows[i][0],
       category: rows[i][1],
       name: rows[i][2],
-      price: rows[i][3]
+      price: rows[i][3],
+      url: rows[i][4] // 取得第 5 欄資料 (新增)
     });
   }
   

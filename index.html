@@ -19,7 +19,6 @@
             --shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
 
-        /* 關鍵修正：確保 padding 不會撐破寬度 */
         * { box-sizing: border-box; }
 
         body {
@@ -27,123 +26,122 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
-            padding: 20px 15px; /* 稍微減小邊界 */
+            padding: 20px 10px;
             display: flex;
             justify-content: center;
         }
 
-        .container { width: 100%; max-width: 900px; }
+        .container { width: 100%; max-width: 950px; }
         header { text-align: center; margin-bottom: 30px; }
         h1 { font-weight: 300; letter-spacing: 2px; color: var(--primary-color); margin-bottom: 10px; font-size: 1.6rem; }
 
+        /* 儀表板樣式 */
         .summary-dashboard {
             background: var(--primary-color);
             color: white;
             padding: 20px;
             border-radius: var(--border-radius);
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 手機預設 2x2 */
+            grid-template-columns: repeat(2, 1fr);
             gap: 15px;
             margin-bottom: 25px;
             box-shadow: var(--shadow);
         }
-
         .summary-item .label { font-size: 0.75rem; opacity: 0.8; margin-bottom: 5px; }
         .summary-item .amount { font-size: 1.2rem; font-weight: 600; color: var(--accent-color); word-break: break-all; }
-        
         .budget-input {
-            background: rgba(255,255,255,0.1);
-            color: var(--accent-color);
-            font-size: 1.2rem;
-            font-weight: 600;
-            width: 100%;
-            padding: 5px 0;
-            border: none;
-            border-bottom: 1px solid var(--accent-color);
-            outline: none;
+            background: rgba(255,255,255,0.1); color: var(--accent-color); font-size: 1.2rem;
+            font-weight: 600; width: 100%; padding: 5px 0; border: none; border-bottom: 1px solid var(--accent-color); outline: none;
         }
         .remaining-negative { color: var(--danger) !important; }
 
-        .category-card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: var(--shadow);
-        }
-
-        .category-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #f1f1f1;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
+        /* 卡片與輸入框 */
+        .category-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 15px; margin-bottom: 25px; box-shadow: var(--shadow); }
+        .category-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .category-title { font-size: 1.1rem; font-weight: 600; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
         .subtotal { font-size: 0.9rem; color: var(--text-sub); }
 
-        /* 修正輸入區域排版 */
-        .input-group { 
-            display: flex; 
-            gap: 10px; 
-            margin-bottom: 20px; 
-            width: 100%;
-        }
-        input { 
-            padding: 10px 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 6px; 
-            outline: none; 
-            transition: 0.3s;
-            font-size: 14px;
-        }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; }
+        input { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; outline: none; transition: 0.3s; font-size: 14px; }
         input:focus { border-color: var(--accent-color); }
-        .name-input { flex: 3; min-width: 0; } /* min-width:0 防止 flex 項目撐破 */
-        .price-input { flex: 1.5; min-width: 0; }
+        .name-input { flex: 2; min-width: 0; }
+        .url-input { flex: 2; min-width: 0; }
+        .price-input { flex: 1; min-width: 0; }
 
         button { cursor: pointer; border: none; border-radius: 6px; transition: 0.3s; }
-        .btn-add { 
-            background: var(--primary-color); 
-            color: white; 
-            padding: 10px 15px; 
-            white-space: nowrap;
-            flex: 1;
+        .btn-add { background: var(--primary-color); color: white; padding: 10px 15px; white-space: nowrap; flex: 0.5; }
+
+        /* 表格樣式 */
+        .table-wrapper { width: 100%; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { padding: 12px 4px; border-bottom: 1px solid #eee; font-size: 0.85rem; word-break: break-word; }
+        .col-drag { width: 30px; }
+        .col-name { width: auto; }
+        .col-url { width: 40px; text-align: center; }
+        .col-price { width: 85px; text-align: right; }
+        .col-action { width: 75px; text-align: right; }
+        .drag-handle { cursor: grab; color: #ccc; font-size: 1rem; }
+        .btn-edit { color: var(--text-sub); margin-right: 5px; font-size: 1.1rem; }
+        .btn-delete { color: #ccc; font-size: 1.1rem; }
+        .link-icon { text-decoration: none; color: var(--accent-color); font-size: 1.1rem; }
+
+        /* --- 彈跳視窗 Modal 樣式 --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; /* 預設隱藏 */
+            justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(3px);
         }
-        .btn-add:hover { background: #3e5871; }
-
-        .table-wrapper { width: 100%; overflow-x: auto; } /* 增加表格捲動保護 */
-        table { width: 100%; border-collapse: collapse; min-width: 300px; }
-        th { text-align: left; color: var(--text-sub); font-size: 0.8rem; padding: 10px 5px; }
-        td { padding: 12px 5px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-
-        .drag-handle { cursor: grab; color: #ccc; padding-right: 8px; font-size: 1rem; width: 25px; }
-        .col-action { text-align: right; min-width: 80px; }
-        .btn-edit, .btn-delete { padding: 5px; background: none; border: none; }
-        .btn-edit { color: var(--text-sub); margin-right: 5px; }
-        .btn-delete { color: #ccc; }
+        .modal-content {
+            background: white; padding: 25px; border-radius: var(--border-radius);
+            width: 90%; max-width: 400px; box-shadow: var(--shadow);
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .modal-header { font-weight: 600; color: var(--primary-color); border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 5px; }
+        .modal-field { display: flex; flex-direction: column; gap: 5px; }
+        .modal-field label { font-size: 0.8rem; color: var(--text-sub); }
+        .modal-field input { width: 100%; border: 1px solid #ddd; padding: 12px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-modal-save { background: var(--primary-color); color: white; flex: 2; padding: 12px; font-weight: 600; }
+        .btn-modal-cancel { background: #eee; color: var(--text-main); flex: 1; padding: 12px; }
 
         .sync-status { font-size: 0.75rem; text-align: center; margin-top: -20px; margin-bottom: 15px; color: var(--text-sub); }
 
-        /* 手機版 RWD 調整 */
         @media (max-width: 600px) {
-            .summary-dashboard { grid-template-columns: 1fr 1fr; }
+            .summary-dashboard { grid-template-columns: 1fr 1fr; padding: 15px; }
             .input-group { flex-direction: column; gap: 8px; }
-            .name-input, .price-input, .btn-add { width: 100%; flex: none; }
-            .edit-name, .edit-price { width: 100%; margin-bottom: 5px; }
-            .col-action { display: flex; flex-direction: column; align-items: flex-end; }
-        }
-
-        @media (min-width: 768px) {
-            .summary-dashboard { grid-template-columns: repeat(4, 1fr); }
-            h1 { font-size: 2rem; }
+            .name-input, .url-input, .price-input, .btn-add { width: 100%; flex: none; }
+            td { font-size: 0.8rem; }
         }
     </style>
 </head>
 <body>
+
+<div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+        <div class="modal-header">編輯項目</div>
+        <input type="hidden" id="edit-id">
+        <input type="hidden" id="edit-category">
+        
+        <div class="modal-field">
+            <label>項目名稱</label>
+            <input type="text" id="modal-name">
+        </div>
+        <div class="modal-field">
+            <label>參考網址</label>
+            <input type="text" id="modal-url" placeholder="http://...">
+        </div>
+        <div class="modal-field">
+            <label>預算金額</label>
+            <input type="number" id="modal-price">
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeModal()">取消</button>
+            <button class="btn-modal-save" onclick="saveEdit()">儲存變更</button>
+        </div>
+    </div>
+</div>
 
 <div class="container">
     <header>
@@ -179,12 +177,13 @@
         </div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
+            <input type="text" class="url-input" placeholder="網址...">
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('engineering')">新增</button>
         </div>
         <div class="table-wrapper">
             <table id="table-engineering">
-                <thead><tr><th style="width: 25px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -197,12 +196,13 @@
         </div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
+            <input type="text" class="url-input" placeholder="網址...">
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('appliances')">新增</button>
         </div>
         <div class="table-wrapper">
             <table id="table-appliances">
-                <thead><tr><th style="width: 25px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -215,12 +215,13 @@
         </div>
         <div class="input-group">
             <input type="text" class="name-input" placeholder="項目名稱...">
+            <input type="text" class="url-input" placeholder="網址...">
             <input type="number" class="price-input" placeholder="金額">
             <button class="btn-add" onclick="addItem('furniture')">新增</button>
         </div>
         <div class="table-wrapper">
             <table id="table-furniture">
-                <thead><tr><th style="width: 25px;"></th><th>名稱</th><th>金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -231,10 +232,10 @@
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0MvelMerRnzM8v7yN7RA-OcA4e0pSl9MO20FOSDJIbGml2yCiAz1qxSpvnVfDucbb/exec';
     let data = { engineering: [], appliances: [], furniture: [] };
 
+    // 初始化與載入
     async function initData() {
         const savedBudget = localStorage.getItem('decoration_budget_goal');
         if (savedBudget) document.getElementById('budget-goal').value = savedBudget;
-
         const statusEl = document.getElementById('sync-status');
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL);
@@ -242,7 +243,7 @@
             data = { engineering: [], appliances: [], furniture: [] };
             cloudData.forEach(item => {
                 if (data[item.category]) {
-                    data[item.category].push({ id: item.id, name: item.name, price: parseFloat(item.price) });
+                    data[item.category].push({ id: item.id, name: item.name, url: item.url || '', price: parseFloat(item.price) });
                 }
             });
             statusEl.innerText = '雲端同步狀態：資料載入成功';
@@ -255,33 +256,31 @@
         initSortable();
     }
 
+    // 拖曳排序
     function initSortable() {
         ['engineering', 'appliances', 'furniture'].forEach(category => {
             const el = document.querySelector(`#table-${category} tbody`);
             Sortable.create(el, {
-                animation: 150,
-                handle: '.drag-handle',
-                ghostClass: 'sortable-ghost',
+                animation: 150, handle: '.drag-handle',
                 onEnd: function (evt) {
-                    if (evt.oldIndex === evt.newIndex) return;
                     const categoryData = data[category];
                     const item = categoryData.splice(evt.oldIndex, 1)[0];
                     categoryData.splice(evt.newIndex, 0, item);
                     updateTotalsOnly();
                     syncToCloud('REORDER', category, { idOrder: categoryData.map(i => i.id) });
-                },
+                }
             });
         });
     }
 
+    // 同步至 Google Sheets
     async function syncToCloud(action, category, item) {
         const statusEl = document.getElementById('sync-status');
         statusEl.innerText = '雲端同步中...';
         statusEl.style.color = 'var(--accent-color)';
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
+                method: 'POST', mode: 'no-cors',
                 body: JSON.stringify({ action, category, ...item })
             });
             statusEl.innerText = '同步完成：' + new Date().toLocaleTimeString();
@@ -292,16 +291,61 @@
         }
     }
 
+    // 新增項目
     function addItem(category) {
         const card = document.querySelector(`section[data-category="${category}"]`);
         const nameInp = card.querySelector('.name-input');
+        const urlInp = card.querySelector('.url-input');
         const priceInp = card.querySelector('.price-input');
         if (!nameInp.value || !priceInp.value) return;
 
-        const newItem = { id: Date.now(), name: nameInp.value, price: parseFloat(priceInp.value) };
+        const newItem = { id: Date.now(), name: nameInp.value, url: urlInp.value, price: parseFloat(priceInp.value) };
         data[category].push(newItem);
         syncToCloud('ADD', category, newItem);
-        nameInp.value = ''; priceInp.value = '';
+        nameInp.value = ''; urlInp.value = ''; priceInp.value = '';
+        render();
+    }
+
+    // --- 彈窗編輯邏輯 ---
+    function openModal(category, id) {
+        const item = data[category].find(i => i.id === id);
+        if (!item) return;
+        
+        document.getElementById('edit-id').value = id;
+        document.getElementById('edit-category').value = category;
+        document.getElementById('modal-name').value = item.name;
+        document.getElementById('modal-url').value = item.url || '';
+        document.getElementById('modal-price').value = item.price;
+        
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function saveEdit() {
+        const id = parseInt(document.getElementById('edit-id').value);
+        const category = document.getElementById('edit-category').value;
+        const newName = document.getElementById('modal-name').value.trim();
+        let newUrl = document.getElementById('modal-url').value.trim();
+        const newPrice = parseFloat(document.getElementById('modal-price').value) || 0;
+
+        // 安全檢測：防止填入整個 HTML
+        if (newUrl.includes('<html') || newUrl.length > 500) {
+            alert('偵測到網址格式錯誤，已自動清除。');
+            newUrl = '';
+        }
+
+        const item = data[category].find(i => i.id === id);
+        if (item) {
+            item.name = newName;
+            item.url = newUrl;
+            item.price = newPrice;
+            syncToCloud('UPDATE', category, item);
+        }
+        
+        closeModal();
         render();
     }
 
@@ -312,30 +356,7 @@
         render();
     }
 
-    function enterEditMode(category, id) {
-        const item = data[category].find(i => i.id === id);
-        const row = document.getElementById(`row-${id}`);
-        row.innerHTML = `
-            <td class="drag-handle">☰</td>
-            <td><input type="text" class="edit-name" style="width:100%" value="${item.name}"></td>
-            <td><input type="number" class="edit-price" style="width:100%" value="${item.price}"></td>
-            <td class="col-action">
-                <button class="btn-save" style="color:var(--success)" onclick="saveEdit('${category}', ${id})">儲存</button>
-                <button class="btn-delete" onclick="render()">✘</button>
-            </td>
-        `;
-    }
-
-    function saveEdit(category, id) {
-        const row = document.getElementById(`row-${id}`);
-        const newName = row.querySelector('.edit-name').value;
-        const newPrice = parseFloat(row.querySelector('.edit-price').value);
-        const item = data[category].find(i => i.id === id);
-        item.name = newName; item.price = newPrice;
-        syncToCloud('UPDATE', category, item);
-        render();
-    }
-
+    // 計算與渲染
     function formatCurrency(num) { return '$' + Math.round(num).toLocaleString(); }
 
     function updateTotalsOnly() {
@@ -347,15 +368,12 @@
             grandTotal += subtotalMap[category];
         }
         document.getElementById('grand-total').innerText = formatCurrency(grandTotal);
-        
         const budgetGoal = parseFloat(document.getElementById('budget-goal').value) || 0;
         localStorage.setItem('decoration_budget_goal', budgetGoal);
-        
         const remaining = budgetGoal - grandTotal;
         const remainingEl = document.getElementById('remaining-budget');
         remainingEl.innerText = formatCurrency(remaining);
         remainingEl.className = 'amount' + (remaining < 0 ? ' remaining-negative' : '');
-
         const engPercent = grandTotal > 0 ? Math.round((subtotalMap.engineering / grandTotal) * 100) : 0;
         document.getElementById('percent-eng').innerText = engPercent + '%';
     }
@@ -363,16 +381,17 @@
     function render() {
         for (let category in data) {
             const tbody = document.querySelector(`#table-${category} tbody`);
-            tbody.innerHTML = data[category].length ? '' : '<tr><td colspan="4" class="empty-hint">尚無項目</td></tr>';
+            tbody.innerHTML = data[category].length ? '' : '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#ccc;">尚無項目</td></tr>';
             data[category].forEach(item => {
                 const tr = document.createElement('tr');
-                tr.id = `row-${item.id}`;
+                const urlLink = item.url ? `<a href="${item.url.startsWith('http') ? item.url : 'https://' + item.url}" target="_blank" class="link-icon">🔗</a>` : '';
                 tr.innerHTML = `
-                    <td class="drag-handle">☰</td>
-                    <td>${item.name}</td>
-                    <td>${formatCurrency(item.price)}</td>
+                    <td class="col-drag drag-handle">☰</td>
+                    <td class="col-name">${item.name}</td>
+                    <td class="col-url">${urlLink}</td>
+                    <td class="col-price">${formatCurrency(item.price)}</td>
                     <td class="col-action">
-                        <button class="btn-edit" onclick="enterEditMode('${category}', ${item.id})">✎</button>
+                        <button class="btn-edit" onclick="openModal('${category}', ${item.id})">✎</button>
                         <button class="btn-delete" onclick="deleteItem('${category}', ${item.id})">×</button>
                     </td>`;
                 tbody.appendChild(tr);

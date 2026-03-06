@@ -75,11 +75,18 @@
         .table-wrapper { width: 100%; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { padding: 12px 4px; border-bottom: 1px solid #eee; font-size: 0.85rem; word-break: break-word; }
+        .col-check { width: 35px; text-align: center; }
         .col-drag { width: 30px; }
         .col-name { width: auto; }
         .col-url { width: 40px; text-align: center; }
         .col-price { width: 85px; text-align: right; }
         .col-action { width: 75px; text-align: right; }
+        
+        /* 已購入樣式 */
+        .is-purchased { background-color: #fafafa; }
+        .is-purchased .col-name { text-decoration: line-through; color: #bbb; }
+        .is-purchased .col-price { color: #bbb; }
+
         .drag-handle { cursor: grab; color: #ccc; font-size: 1rem; }
         .btn-edit { color: var(--text-sub); margin-right: 5px; font-size: 1.1rem; }
         .btn-delete { color: #ccc; font-size: 1.1rem; }
@@ -88,7 +95,7 @@
         /* --- 彈跳視窗 Modal 樣式 --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); display: none; /* 預設隱藏 */
+            background: rgba(0,0,0,0.5); display: none;
             justify-content: center; align-items: center; z-index: 1000;
             backdrop-filter: blur(3px);
         }
@@ -183,7 +190,7 @@
         </div>
         <div class="table-wrapper">
             <table id="table-engineering">
-                <thead><tr><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-check">已完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -202,7 +209,7 @@
         </div>
         <div class="table-wrapper">
             <table id="table-appliances">
-                <thead><tr><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-check">已完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -221,7 +228,7 @@
         </div>
         <div class="table-wrapper">
             <table id="table-furniture">
-                <thead><tr><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-check">已完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -243,7 +250,13 @@
             data = { engineering: [], appliances: [], furniture: [] };
             cloudData.forEach(item => {
                 if (data[item.category]) {
-                    data[item.category].push({ id: item.id, name: item.name, url: item.url || '', price: parseFloat(item.price) });
+                    data[item.category].push({ 
+                        id: item.id, 
+                        name: item.name, 
+                        url: item.url || '', 
+                        price: parseFloat(item.price),
+                        purchased: !!item.purchased // 確保有 purchased 欄位
+                    });
                 }
             });
             statusEl.innerText = '雲端同步狀態：資料載入成功';
@@ -263,11 +276,17 @@
             Sortable.create(el, {
                 animation: 150, handle: '.drag-handle',
                 onEnd: function (evt) {
-                    const categoryData = data[category];
-                    const item = categoryData.splice(evt.oldIndex, 1)[0];
-                    categoryData.splice(evt.newIndex, 0, item);
+                    // 注意：因為渲染時有重新排序，手動拖曳後的順序需要重新對應回原陣列
+                    // 這裡簡單處理：重新抓取 DOM 的 id 順序
+                    const rows = Array.from(el.querySelectorAll('tr[data-id]'));
+                    const idOrder = rows.map(r => parseInt(r.dataset.id));
+                    
+                    // 重構 data[category] 順序
+                    const newData = idOrder.map(id => data[category].find(i => i.id === id));
+                    data[category] = newData;
+                    
                     updateTotalsOnly();
-                    syncToCloud('REORDER', category, { idOrder: categoryData.map(i => i.id) });
+                    syncToCloud('REORDER', category, { idOrder: idOrder });
                 }
             });
         });
@@ -299,11 +318,21 @@
         const priceInp = card.querySelector('.price-input');
         if (!nameInp.value || !priceInp.value) return;
 
-        const newItem = { id: Date.now(), name: nameInp.value, url: urlInp.value, price: parseFloat(priceInp.value) };
+        const newItem = { id: Date.now(), name: nameInp.value, url: urlInp.value, price: parseFloat(priceInp.value), purchased: false };
         data[category].push(newItem);
         syncToCloud('ADD', category, newItem);
         nameInp.value = ''; urlInp.value = ''; priceInp.value = '';
         render();
+    }
+
+    // 切換購入狀態
+    function togglePurchased(category, id) {
+        const item = data[category].find(i => i.id === id);
+        if (item) {
+            item.purchased = !item.purchased;
+            syncToCloud('UPDATE', category, item); // 同樣使用 UPDATE 動作
+            render();
+        }
     }
 
     // --- 彈窗編輯邏輯 ---
@@ -331,7 +360,6 @@
         let newUrl = document.getElementById('modal-url').value.trim();
         const newPrice = parseFloat(document.getElementById('modal-price').value) || 0;
 
-        // 安全檢測：防止填入整個 HTML
         if (newUrl.includes('<html') || newUrl.length > 500) {
             alert('偵測到網址格式錯誤，已自動清除。');
             newUrl = '';
@@ -356,7 +384,6 @@
         render();
     }
 
-    // 計算與渲染
     function formatCurrency(num) { return '$' + Math.round(num).toLocaleString(); }
 
     function updateTotalsOnly() {
@@ -381,11 +408,27 @@
     function render() {
         for (let category in data) {
             const tbody = document.querySelector(`#table-${category} tbody`);
-            tbody.innerHTML = data[category].length ? '' : '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#ccc;">尚無項目</td></tr>';
-            data[category].forEach(item => {
+            tbody.innerHTML = '';
+            
+            if (data[category].length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#ccc;">尚無項目</td></tr>';
+                continue;
+            }
+
+            // 重要：依照 purchased 狀態排序 (已購入 true 在前)
+            const sortedItems = [...data[category]].sort((a, b) => (b.purchased === a.purchased) ? 0 : b.purchased ? 1 : -1);
+
+            sortedItems.forEach(item => {
                 const tr = document.createElement('tr');
+                tr.dataset.id = item.id;
+                if (item.purchased) tr.classList.add('is-purchased');
+                
                 const urlLink = item.url ? `<a href="${item.url.startsWith('http') ? item.url : 'https://' + item.url}" target="_blank" class="link-icon">🔗</a>` : '';
+                
                 tr.innerHTML = `
+                    <td class="col-check">
+                        <input type="checkbox" ${item.purchased ? 'checked' : ''} onchange="togglePurchased('${category}', ${item.id})">
+                    </td>
                     <td class="col-drag drag-handle">☰</td>
                     <td class="col-name">${item.name}</td>
                     <td class="col-url">${urlLink}</td>

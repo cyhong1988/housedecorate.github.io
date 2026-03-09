@@ -1,58 +1,78 @@
-// 讀取資料
-function doGet() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = sheet.getDataRange().getValues();
-  var headers = data[0];
-  var jsonData = [];
-  
-  for (var i = 1; i < data.length; i++) {
-    var obj = {};
-    for (var j = 0; j < headers.length; j++) {
-      obj[headers[j]] = data[i][j];
-    }
-    jsonData.push(obj);
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify(jsonData))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// 處理新增、修改、刪除、排序
 function doPost(e) {
   var params = JSON.parse(e.postData.contents);
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = sheet.getDataRange().getValues();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheets()[0];
+  var rows = sheet.getDataRange().getValues(); 
   var action = params.action;
 
-  if (action === 'ADD') {
-    // 新增時預設 purchased 為 false
-    sheet.appendRow([params.id, params.category, params.name, params.url, params.price, false]);
-  } 
+  // 處理排序邏輯 (REORDER)
+  if (action === 'REORDER') {
+    var idOrder = params.idOrder; 
+    var header = rows.shift(); 
+    
+    var sortedData = [];
+    idOrder.forEach(function(id) {
+      var row = rows.find(function(r) { return r[0].toString() == id.toString(); });
+      if (row) sortedData.push(row);
+    });
+    
+    rows.forEach(function(row) {
+      if (row[1] !== params.category) {
+        sortedData.push(row);
+      }
+    });
+
+    sheet.clearContents();
+    sheet.appendRow(header);
+    if (sortedData.length > 0) {
+      sheet.getRange(2, 1, sortedData.length, sortedData[0].length).setValues(sortedData);
+    }
+    return ContentService.createTextOutput("Order Updated");
+  }
   
+  // 處理新增邏輯 (ADD) - 新增網址到第 5 欄
+  if (action === 'ADD') {
+    sheet.appendRow([params.id, params.category, params.name, params.price, params.url]);
+  } 
+  // 處理更新邏輯 (UPDATE)
   else if (action === 'UPDATE') {
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0] == params.id) { // 比對 ID
-        var row = i + 1;
-        // 更新對應欄位 (假設順序是 id, cat, name, url, price, purchased)
-        sheet.getRange(row, 3).setValue(params.name);
-        sheet.getRange(row, 4).setValue(params.url);
-        sheet.getRange(row, 5).setValue(params.price);
-        sheet.getRange(row, 6).setValue(params.purchased); // 這裡儲存勾選狀態
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i][0].toString() == params.id.toString()) { 
+        sheet.getRange(i + 1, 3).setValue(params.name);  // C 欄：名稱
+        sheet.getRange(i + 1, 4).setValue(params.price); // D 欄：金額
+        sheet.getRange(i + 1, 5).setValue(params.url);   // E 欄：網址 (新增)
         break;
       }
     }
   } 
-  
+  // 處理刪除邏輯 (DELETE)
   else if (action === 'DELETE') {
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0] == params.id) {
+    for (var i = rows.length - 1; i >= 0; i--) {
+      if (rows[i][0].toString() == params.id.toString()) {
         sheet.deleteRow(i + 1);
-        break;
+        break; 
       }
     }
   }
   
-  // 排序 (REORDER) 邏輯通常較複雜，若只需簡單記憶狀態，UPDATE 已足夠
+  return ContentService.createTextOutput("OK");
+}
+
+function doGet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var rows = sheet.getDataRange().getValues();
+  var data = [];
   
-  return ContentService.createTextOutput("Success");
+  for (var i = 1; i < rows.length; i++) {
+    data.push({
+      id: rows[i][0],
+      category: rows[i][1],
+      name: rows[i][2],
+      price: rows[i][3],
+      url: rows[i][4] // 取得第 5 欄資料 (新增)
+    });
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }

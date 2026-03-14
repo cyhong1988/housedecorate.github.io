@@ -83,7 +83,7 @@
         .col-action { width: 75px; text-align: right; }
         
         /* 已購入樣式 */
-        .is-purchased { background-color: #fafafa; }
+        .is-purchased { background-color: #fcfcfc; }
         .is-purchased .col-name { text-decoration: line-through; color: #bbb; }
         .is-purchased .col-price { color: #bbb; }
 
@@ -190,7 +190,7 @@
         </div>
         <div class="table-wrapper">
             <table id="table-engineering">
-                <thead><tr><th class="col-check">已完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-check">完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -209,7 +209,7 @@
         </div>
         <div class="table-wrapper">
             <table id="table-appliances">
-                <thead><tr><th class="col-check">已完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-check">完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -228,7 +228,7 @@
         </div>
         <div class="table-wrapper">
             <table id="table-furniture">
-                <thead><tr><th class="col-check">已完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
+                <thead><tr><th class="col-check">完成</th><th class="col-drag"></th><th class="col-name">名稱</th><th class="col-url">網址</th><th class="col-price">金額</th><th class="col-action">操作</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -255,10 +255,16 @@
                         name: item.name, 
                         url: item.url || '', 
                         price: parseFloat(item.price),
-                        purchased: !!item.purchased // 確保有 purchased 欄位
+                        purchased: !!item.purchased 
                     });
                 }
             });
+
+            // 初始排序：已完成項目置頂
+            for(let cat in data) {
+                data[cat].sort((a, b) => (b.purchased === a.purchased) ? 0 : b.purchased ? -1 : 1);
+            }
+
             statusEl.innerText = '雲端同步狀態：資料載入成功';
             statusEl.style.color = 'var(--success)';
         } catch (e) {
@@ -276,12 +282,10 @@
             Sortable.create(el, {
                 animation: 150, handle: '.drag-handle',
                 onEnd: function (evt) {
-                    // 注意：因為渲染時有重新排序，手動拖曳後的順序需要重新對應回原陣列
-                    // 這裡簡單處理：重新抓取 DOM 的 id 順序
                     const rows = Array.from(el.querySelectorAll('tr[data-id]'));
                     const idOrder = rows.map(r => parseInt(r.dataset.id));
                     
-                    // 重構 data[category] 順序
+                    // 根據目前 DOM 順序更新資料陣列
                     const newData = idOrder.map(id => data[category].find(i => i.id === id));
                     data[category] = newData;
                     
@@ -330,8 +334,9 @@
         const item = data[category].find(i => i.id === id);
         if (item) {
             item.purchased = !item.purchased;
-            syncToCloud('UPDATE', category, item); // 同樣使用 UPDATE 動作
-            render();
+            // 立即更新到雲端記憶
+            syncToCloud('UPDATE', category, item); 
+            render(); // render 會自動執行排序
         }
     }
 
@@ -359,11 +364,6 @@
         const newName = document.getElementById('modal-name').value.trim();
         let newUrl = document.getElementById('modal-url').value.trim();
         const newPrice = parseFloat(document.getElementById('modal-price').value) || 0;
-
-        if (newUrl.includes('<html') || newUrl.length > 500) {
-            alert('偵測到網址格式錯誤，已自動清除。');
-            newUrl = '';
-        }
 
         const item = data[category].find(i => i.id === id);
         if (item) {
@@ -415,10 +415,13 @@
                 continue;
             }
 
-            // 重要：依照 purchased 狀態排序 (已購入 true 在前)
-            const sortedItems = [...data[category]].sort((a, b) => (b.purchased === a.purchased) ? 0 : b.purchased ? 1 : -1);
+            // 渲染前自動排序：已完成 (true) 置頂
+            data[category].sort((a, b) => {
+                if (a.purchased === b.purchased) return 0;
+                return a.purchased ? -1 : 1; 
+            });
 
-            sortedItems.forEach(item => {
+            data[category].forEach(item => {
                 const tr = document.createElement('tr');
                 tr.dataset.id = item.id;
                 if (item.purchased) tr.classList.add('is-purchased');

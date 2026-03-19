@@ -400,14 +400,32 @@
             const tbody = document.querySelector(`#table-${category} tbody`);
             tbody.innerHTML = '';
             
-            // 雙重排序：1. 已完成優先 2. 分期期數降冪
+            // 排序邏輯：
+            // 1. 已勾選項目優先 (purchased: true)
+            // 2. 勾選狀態相同時，依「付款類別」分組：
+            //    - 分期付款項目 (installments > 1) 優先於 單次付款項目
+            //    - 分期內部：依期數 (installments) 降冪排列
+            //    - 單次內部：依價格 (price) 降冪排列
             const sortedItems = [...data[category]].sort((a, b) => {
-                // 已勾選 (purchased: true) 排在前面
+                // 第一層：已完成優先
                 if (b.purchased !== a.purchased) {
                     return b.purchased - a.purchased;
                 }
-                // 狀態相同時，依分期期數由大到小排
-                return b.installments - a.installments;
+                
+                // 第二層：區分分期與單次
+                const aIsInst = a.installments > 1;
+                const bIsInst = b.installments > 1;
+
+                if (aIsInst && bIsInst) {
+                    // 均為分期：期數降冪
+                    return b.installments - a.installments;
+                } else if (!aIsInst && !bIsInst) {
+                    // 均為單次：價格降冪
+                    return b.price - a.price;
+                } else {
+                    // 一個分期一個單次：分期排前面
+                    return bIsInst - aIsInst;
+                }
             });
             
             sortedItems.forEach(item => {

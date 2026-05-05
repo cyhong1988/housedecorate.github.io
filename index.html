@@ -55,6 +55,8 @@
         .summary-item .label { font-size: 0.65rem; opacity: 0.8; margin-bottom: 3px; }
         .summary-item .amount { font-size: 1rem; font-weight: 600; color: var(--accent-color); }
         .span-6 .amount { font-size: 1.4rem; }
+        /* 強化待付餘額的顏色提醒 */
+        #pending-amount { color: #ffeb3b; } 
 
         .budget-input {
             background: rgba(255,255,255,0.1); color: var(--accent-color); font-size: 1rem;
@@ -185,20 +187,25 @@
             <div class="amount" id="grand-total">$ 0</div>
         </div>
         
-        <div class="summary-item span-6">
-            <div class="label">⚖️ 剩餘預算</div>
+        <!-- 修改區域：拆分為剩餘預算與待付餘額 -->
+        <div class="summary-item span-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+            <div class="label">📊 剩餘預算 (目標-累計)</div>
             <div class="amount" id="remaining-budget">$ 0</div>
         </div>
+        <div class="summary-item span-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+            <div class="label">⚖️ 待付餘額 (尚未勾選)</div>
+            <div class="amount" id="pending-amount">$ 0</div>
+        </div>
         
-        <div class="summary-item span-2">
+        <div class="summary-item span-2" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             <div class="label">🏗️ 工程佔比</div>
             <div class="amount" id="percent-eng">0%</div>
         </div>
-        <div class="summary-item span-2">
+        <div class="summary-item span-2" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             <div class="label">📺 家電佔比</div>
             <div class="amount" id="percent-app">0%</div>
         </div>
-        <div class="summary-item span-2">
+        <div class="summary-item span-2" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             <div class="label">🛋️ 軟裝佔比</div>
             <div class="amount" id="percent-fur">0%</div>
         </div>
@@ -367,14 +374,25 @@
     function formatCurrency(num) { return '$' + Math.round(num).toLocaleString(); }
 
     function updateTotalsOnly() {
-        let grandTotal = 0, subMap = { engineering: 0, appliances: 0, furniture: 0 };
+        let grandTotal = 0, paidTotal = 0, subMap = { engineering: 0, appliances: 0, furniture: 0 };
+        
         for (let cat in data) {
-            data[cat].forEach(i => subMap[cat] += i.price);
+            data[cat].forEach(i => {
+                subMap[cat] += i.price;
+                if (i.purchased) {
+                    paidTotal += i.price; // 累計已勾選金額
+                }
+            });
             document.getElementById(`subtotal-${cat}`).innerText = formatCurrency(subMap[cat]);
             grandTotal += subMap[cat];
         }
+        
         document.getElementById('grand-total').innerText = formatCurrency(grandTotal);
         
+        // 更新待付餘額 (累計支出 - 已勾選金額)
+        const pendingAmount = grandTotal - paidTotal;
+        document.getElementById('pending-amount').innerText = formatCurrency(pendingAmount);
+
         const goalInput = document.getElementById('budget-goal').value;
         localStorage.setItem('decoration_budget_goal', goalInput);
         const goal = parseFloat(goalInput) || 0;
@@ -400,32 +418,13 @@
             const tbody = document.querySelector(`#table-${category} tbody`);
             tbody.innerHTML = '';
             
-            // 排序邏輯：
-            // 1. 已勾選項目優先 (purchased: true)
-            // 2. 勾選狀態相同時，依「付款類別」分組：
-            //    - 分期付款項目 (installments > 1) 優先於 單次付款項目
-            //    - 分期內部：依期數 (installments) 降冪排列
-            //    - 單次內部：依價格 (price) 降冪排列
             const sortedItems = [...data[category]].sort((a, b) => {
-                // 第一層：已完成優先
-                if (b.purchased !== a.purchased) {
-                    return b.purchased - a.purchased;
-                }
-                
-                // 第二層：區分分期與單次
+                if (b.purchased !== a.purchased) return b.purchased - a.purchased;
                 const aIsInst = a.installments > 1;
                 const bIsInst = b.installments > 1;
-
-                if (aIsInst && bIsInst) {
-                    // 均為分期：期數降冪
-                    return b.installments - a.installments;
-                } else if (!aIsInst && !bIsInst) {
-                    // 均為單次：價格降冪
-                    return b.price - a.price;
-                } else {
-                    // 一個分期一個單次：分期排前面
-                    return bIsInst - aIsInst;
-                }
+                if (aIsInst && bIsInst) return b.installments - a.installments;
+                else if (!aIsInst && !bIsInst) return b.price - a.price;
+                else return bIsInst - aIsInst;
             });
             
             sortedItems.forEach(item => {

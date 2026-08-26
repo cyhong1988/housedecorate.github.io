@@ -35,6 +35,25 @@
         header { text-align: center; margin-bottom: 20px; }
         h1 { font-weight: 300; letter-spacing: 2px; color: var(--primary-color); margin-bottom: 5px; font-size: 1.4rem; }
 
+        .payer-stats-container {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .payer-stat-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .payer-stat-name { font-size: 0.85rem; font-weight: 600; color: var(--primary-color); margin-bottom: 5px; }
+        .payer-stat-amount { font-size: 1.2rem; font-weight: bold; color: var(--accent-color); }
+        .payer-stat-sub { font-size: 0.7rem; color: var(--text-sub); margin-top: 6px; border-top: 1px dashed #eee; padding-top: 6px; }
+
         .summary-dashboard {
             background: var(--primary-color);
             color: white;
@@ -55,7 +74,6 @@
         .summary-item .label { font-size: 0.65rem; opacity: 0.8; margin-bottom: 3px; }
         .summary-item .amount { font-size: 1rem; font-weight: 600; color: var(--accent-color); }
         .span-6 .amount { font-size: 1.4rem; }
-        /* 強化待付餘額的顏色提醒 */
         #pending-amount { color: #ffeb3b; } 
 
         .budget-input {
@@ -91,6 +109,18 @@
         .btn-delete { color: #ddd; font-size: 1rem; }
         .link-icon { text-decoration: none; color: var(--accent-color); font-size: 1rem; }
         .inst-badge { font-size: 0.65rem; color: #999; display: block; }
+        
+        .payer-badge {
+            font-size: 0.65rem;
+            background: #f1f2f6;
+            color: #576574;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-left: 4px;
+            display: inline-block;
+            margin-top: 2px;
+            border: 1px solid #e2e8f0;
+        }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -101,6 +131,7 @@
         .modal-content {
             background: white; padding: 20px; border-radius: var(--border-radius);
             width: 85%; max-width: 350px; display: flex; flex-direction: column; gap: 12px;
+            max-height: 90vh; overflow-y: auto; /* 確保內容過多時可滾動 */
         }
         .modal-field { display: flex; flex-direction: column; gap: 4px; }
         .modal-field label { font-size: 0.75rem; color: var(--text-sub); }
@@ -124,7 +155,19 @@
         <div style="font-weight:600; border-bottom:1px solid #eee; padding-bottom:8px;">✎ 編輯項目</div>
         <input type="hidden" id="edit-id">
         <input type="hidden" id="edit-category">
+        
+        <!-- 新增：快速移動分類下拉選單 -->
+        <div class="modal-field">
+            <label>分類 (可快速移動項目)</label>
+            <select id="modal-category">
+                <option value="engineering">🏗️ 裝修工程</option>
+                <option value="appliances">📺 家電設備</option>
+                <option value="furniture">🛋️ 傢俱軟裝</option>
+            </select>
+        </div>
+        
         <div class="modal-field"><label>名稱</label><input type="text" id="modal-name"></div>
+        <div class="modal-field"><label>支付人 (選填)</label><input type="text" id="modal-payer" placeholder="例如：老公、老婆"></div>
         <div class="modal-field"><label>網址</label><input type="text" id="modal-url"></div>
         <div class="modal-field"><label>金額</label><input type="number" id="modal-price"></div>
         <div class="modal-field">
@@ -150,6 +193,7 @@
         <div style="font-weight:600; border-bottom:1px solid #eee; padding-bottom:8px;">➕ 新增項目</div>
         <input type="hidden" id="add-category">
         <div class="modal-field"><label>名稱</label><input type="text" id="new-name" placeholder="例如：沙發"></div>
+        <div class="modal-field"><label>支付人 (選填)</label><input type="text" id="new-payer" placeholder="例如：老公、老婆"></div>
         <div class="modal-field"><label>網址</label><input type="text" id="new-url" placeholder="https://..."></div>
         <div class="modal-field"><label>金額</label><input type="number" id="new-price" placeholder="0"></div>
         <div class="modal-field">
@@ -177,6 +221,8 @@
 
     <div class="sync-status" id="sync-status">正在載入數據...</div>
 
+    <div class="payer-stats-container" id="payer-stats-container"></div>
+
     <div class="summary-dashboard">
         <div class="summary-item span-3">
             <div class="label">🎯 預算目標</div>
@@ -187,7 +233,6 @@
             <div class="amount" id="grand-total">$ 0</div>
         </div>
         
-        <!-- 修改區域：拆分為剩餘預算與待付餘額 -->
         <div class="summary-item span-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             <div class="label">📊 剩餘預算 (目標-累計)</div>
             <div class="amount" id="remaining-budget">$ 0</div>
@@ -264,10 +309,21 @@
             data = { engineering: [], appliances: [], furniture: [] };
             cloudData.forEach(item => {
                 if (data[item.category]) {
+                    
+                    let parsedName = item.name || '';
+                    let parsedPayer = item.payer || '';
+                    
+                    if (!parsedPayer && parsedName.includes(' (支付: ')) {
+                        const parts = parsedName.split(' (支付: ');
+                        parsedName = parts[0];
+                        parsedPayer = parts[1].replace(')', '');
+                    }
+
                     data[item.category].push({ 
-                        id: item.id, name: item.name, url: item.url || '', 
+                        id: item.id, name: parsedName, url: item.url || '', 
                         price: parseFloat(item.price), purchased: !!item.purchased,
-                        installments: parseInt(item.installments) || 1
+                        installments: parseInt(item.installments) || 1,
+                        payer: parsedPayer
                     });
                 }
             });
@@ -296,9 +352,14 @@
 
     async function syncToCloud(action, category, item) {
         try {
+            let payloadItem = { ...item };
+            if (payloadItem.name && payloadItem.payer) {
+                payloadItem.name = `${payloadItem.name} (支付: ${payloadItem.payer})`;
+            }
+
             await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST', mode: 'no-cors',
-                body: JSON.stringify({ action, category, ...item })
+                body: JSON.stringify({ action, category, ...payloadItem })
             });
         } catch (e) {}
     }
@@ -306,6 +367,7 @@
     function openAddModal(category) {
         document.getElementById('add-category').value = category;
         document.getElementById('new-name').value = '';
+        document.getElementById('new-payer').value = '';
         document.getElementById('new-url').value = '';
         document.getElementById('new-price').value = '';
         document.getElementById('new-inst').value = '1';
@@ -315,11 +377,12 @@
     function confirmAdd() {
         const category = document.getElementById('add-category').value;
         const name = document.getElementById('new-name').value;
+        const payer = document.getElementById('new-payer').value.trim();
         const url = document.getElementById('new-url').value;
         const price = parseFloat(document.getElementById('new-price').value);
         const inst = parseInt(document.getElementById('new-inst').value);
         if (!name || isNaN(price)) { alert('請輸入完整名稱與金額'); return; }
-        const newItem = { id: Date.now(), name, url, price, purchased: false, installments: inst };
+        const newItem = { id: Date.now(), name, url, price, purchased: false, installments: inst, payer };
         data[category].push(newItem);
         syncToCloud('ADD', category, newItem);
         closeModal('addModal');
@@ -330,8 +393,10 @@
         const item = data[category].find(i => i.id === id);
         if (!item) return;
         document.getElementById('edit-id').value = id;
-        document.getElementById('edit-category').value = category;
+        document.getElementById('edit-category').value = category; // 紀錄原始分類
+        document.getElementById('modal-category').value = category; // 設定下拉選單目前的分類
         document.getElementById('modal-name').value = item.name;
+        document.getElementById('modal-payer').value = item.payer || '';
         document.getElementById('modal-url').value = item.url;
         document.getElementById('modal-price').value = item.price;
         document.getElementById('modal-inst').value = item.installments;
@@ -340,19 +405,42 @@
 
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-    function saveEdit() {
+    // 使用 async 確保發送請求的順序正確
+    async function saveEdit() {
         const id = parseInt(document.getElementById('edit-id').value);
-        const category = document.getElementById('edit-category').value;
-        const item = data[category].find(i => i.id === id);
-        if (item) {
+        const oldCategory = document.getElementById('edit-category').value;
+        const newCategory = document.getElementById('modal-category').value;
+        
+        const itemIndex = data[oldCategory].findIndex(i => i.id === id);
+        if (itemIndex > -1) {
+            const item = data[oldCategory][itemIndex];
             item.name = document.getElementById('modal-name').value;
+            item.payer = document.getElementById('modal-payer').value.trim();
             item.url = document.getElementById('modal-url').value;
             item.price = parseFloat(document.getElementById('modal-price').value);
             item.installments = parseInt(document.getElementById('modal-inst').value);
-            syncToCloud('UPDATE', category, item);
+
+            // 判斷是否需要移動分類
+            if (oldCategory !== newCategory) {
+                // 從舊陣列移除，並加入新陣列
+                data[oldCategory].splice(itemIndex, 1);
+                data[newCategory].push(item);
+                
+                // 為了相容 GAS 後端：觸發「刪除舊的」與「新增到新的」
+                // 先關閉視窗與重繪畫面，讓使用者感覺瞬間完成
+                closeModal('editModal');
+                render();
+                
+                // 背景執行網路請求，避免 race condition
+                await syncToCloud('DELETE', oldCategory, { id: item.id });
+                await syncToCloud('ADD', newCategory, item);
+            } else {
+                // 沒有改變分類，直接走一般的 UPDATE
+                syncToCloud('UPDATE', oldCategory, item);
+                closeModal('editModal');
+                render();
+            }
         }
-        closeModal('editModal');
-        render();
     }
 
     function togglePurchased(category, id) {
@@ -375,21 +463,46 @@
 
     function updateTotalsOnly() {
         let grandTotal = 0, paidTotal = 0, subMap = { engineering: 0, appliances: 0, furniture: 0 };
+        let payerStats = {}; 
         
         for (let cat in data) {
             data[cat].forEach(i => {
                 subMap[cat] += i.price;
                 if (i.purchased) {
-                    paidTotal += i.price; // 累計已勾選金額
+                    paidTotal += i.price;
+                }
+                
+                if (i.payer) {
+                    if (!payerStats[i.payer]) {
+                        payerStats[i.payer] = { total: 0, paid: 0 };
+                    }
+                    payerStats[i.payer].total += i.price;
+                    if (i.purchased) {
+                        payerStats[i.payer].paid += i.price;
+                    }
                 }
             });
             document.getElementById(`subtotal-${cat}`).innerText = formatCurrency(subMap[cat]);
             grandTotal += subMap[cat];
         }
         
+        const payerContainer = document.getElementById('payer-stats-container');
+        if (Object.keys(payerStats).length > 0) {
+            payerContainer.style.display = 'grid';
+            payerContainer.innerHTML = Object.entries(payerStats).map(([payer, stat]) => `
+                <div class="payer-stat-card">
+                    <div class="payer-stat-name">👤 ${payer} 總負擔</div>
+                    <div class="payer-stat-amount">${formatCurrency(stat.total)}</div>
+                    <div class="payer-stat-sub">✔ 已勾選支出：${formatCurrency(stat.paid)}</div>
+                </div>
+            `).join('');
+        } else {
+            payerContainer.style.display = 'none';
+            payerContainer.innerHTML = '';
+        }
+
         document.getElementById('grand-total').innerText = formatCurrency(grandTotal);
         
-        // 更新待付餘額 (累計支出 - 已勾選金額)
         const pendingAmount = grandTotal - paidTotal;
         document.getElementById('pending-amount').innerText = formatCurrency(pendingAmount);
 
@@ -435,10 +548,12 @@
                 const instText = item.installments > 1 
                     ? `${item.installments}期<span class="inst-badge">${formatCurrency(item.price / item.installments)}</span>` : '單次';
 
+                const payerBadge = item.payer ? `<span class="payer-badge">👤 ${item.payer}</span>` : '';
+
                 tr.innerHTML = `
                     <td class="col-check"><input type="checkbox" ${item.purchased ? 'checked' : ''} onchange="togglePurchased('${category}', ${item.id})"></td>
                     <td class="col-drag drag-handle">☰</td>
-                    <td class="col-name">${item.name}</td>
+                    <td class="col-name">${item.name} ${payerBadge}</td>
                     <td class="col-url">${urlLink}</td>
                     <td class="col-inst">${instText}</td>
                     <td class="col-price">${formatCurrency(item.price)}</td>

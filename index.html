@@ -131,7 +131,7 @@
         .modal-content {
             background: white; padding: 20px; border-radius: var(--border-radius);
             width: 85%; max-width: 350px; display: flex; flex-direction: column; gap: 12px;
-            max-height: 90vh; overflow-y: auto; /* 確保內容過多時可滾動 */
+            max-height: 90vh; overflow-y: auto;
         }
         .modal-field { display: flex; flex-direction: column; gap: 4px; }
         .modal-field label { font-size: 0.75rem; color: var(--text-sub); }
@@ -156,7 +156,6 @@
         <input type="hidden" id="edit-id">
         <input type="hidden" id="edit-category">
         
-        <!-- 新增：快速移動分類下拉選單 -->
         <div class="modal-field">
             <label>分類 (可快速移動項目)</label>
             <select id="modal-category">
@@ -167,7 +166,13 @@
         </div>
         
         <div class="modal-field"><label>名稱</label><input type="text" id="modal-name"></div>
-        <div class="modal-field"><label>支付人 (選填)</label><input type="text" id="modal-payer" placeholder="例如：老公、老婆"></div>
+        
+        <div class="modal-field">
+            <label>支付人 (選填)</label>
+            <select id="modal-payer-select" onchange="toggleCustomPayer('edit')"></select>
+            <input type="text" id="modal-payer-custom" style="display:none; margin-top:5px;" placeholder="請輸入新支付人名稱">
+        </div>
+
         <div class="modal-field"><label>網址</label><input type="text" id="modal-url"></div>
         <div class="modal-field"><label>金額</label><input type="number" id="modal-price"></div>
         <div class="modal-field">
@@ -193,7 +198,13 @@
         <div style="font-weight:600; border-bottom:1px solid #eee; padding-bottom:8px;">➕ 新增項目</div>
         <input type="hidden" id="add-category">
         <div class="modal-field"><label>名稱</label><input type="text" id="new-name" placeholder="例如：沙發"></div>
-        <div class="modal-field"><label>支付人 (選填)</label><input type="text" id="new-payer" placeholder="例如：老公、老婆"></div>
+        
+        <div class="modal-field">
+            <label>支付人 (選填)</label>
+            <select id="new-payer-select" onchange="toggleCustomPayer('new')"></select>
+            <input type="text" id="new-payer-custom" style="display:none; margin-top:5px;" placeholder="請輸入新支付人名稱">
+        </div>
+
         <div class="modal-field"><label>網址</label><input type="text" id="new-url" placeholder="https://..."></div>
         <div class="modal-field"><label>金額</label><input type="number" id="new-price" placeholder="0"></div>
         <div class="modal-field">
@@ -364,10 +375,51 @@
         } catch (e) {}
     }
 
+    // 更新：取得所有曾填寫過的支付人（移除原本預設的老公、老婆）
+    function getUniquePayers() {
+        const payers = new Set(); // 乾淨的 Set，只吃實際資料
+        for (let cat in data) {
+            data[cat].forEach(item => {
+                if (item.payer) payers.add(item.payer);
+            });
+        }
+        return Array.from(payers);
+    }
+
+    function populatePayerSelects() {
+        const payers = getUniquePayers();
+        const selects = ['new-payer-select', 'modal-payer-select'];
+        
+        selects.forEach(selectId => {
+            const selectEl = document.getElementById(selectId);
+            selectEl.innerHTML = `<option value="">-- 免填 (無) --</option>`;
+            payers.forEach(p => {
+                selectEl.innerHTML += `<option value="${p}">${p}</option>`;
+            });
+            selectEl.innerHTML += `<option value="CUSTOM">➕ 自訂新支付人...</option>`;
+        });
+    }
+
+    function toggleCustomPayer(mode) {
+        const select = document.getElementById(mode === 'new' ? 'new-payer-select' : 'modal-payer-select');
+        const customInput = document.getElementById(mode === 'new' ? 'new-payer-custom' : 'modal-payer-custom');
+        if (select.value === 'CUSTOM') {
+            customInput.style.display = 'block';
+            customInput.focus();
+        } else {
+            customInput.style.display = 'none';
+        }
+    }
+
     function openAddModal(category) {
         document.getElementById('add-category').value = category;
         document.getElementById('new-name').value = '';
-        document.getElementById('new-payer').value = '';
+        
+        populatePayerSelects();
+        document.getElementById('new-payer-select').value = '';
+        document.getElementById('new-payer-custom').value = '';
+        document.getElementById('new-payer-custom').style.display = 'none';
+        
         document.getElementById('new-url').value = '';
         document.getElementById('new-price').value = '';
         document.getElementById('new-inst').value = '1';
@@ -377,11 +429,17 @@
     function confirmAdd() {
         const category = document.getElementById('add-category').value;
         const name = document.getElementById('new-name').value;
-        const payer = document.getElementById('new-payer').value.trim();
+        
+        let payer = document.getElementById('new-payer-select').value;
+        if (payer === 'CUSTOM') {
+            payer = document.getElementById('new-payer-custom').value.trim();
+        }
+        
         const url = document.getElementById('new-url').value;
         const price = parseFloat(document.getElementById('new-price').value);
         const inst = parseInt(document.getElementById('new-inst').value);
         if (!name || isNaN(price)) { alert('請輸入完整名稱與金額'); return; }
+        
         const newItem = { id: Date.now(), name, url, price, purchased: false, installments: inst, payer };
         data[category].push(newItem);
         syncToCloud('ADD', category, newItem);
@@ -393,10 +451,21 @@
         const item = data[category].find(i => i.id === id);
         if (!item) return;
         document.getElementById('edit-id').value = id;
-        document.getElementById('edit-category').value = category; // 紀錄原始分類
-        document.getElementById('modal-category').value = category; // 設定下拉選單目前的分類
+        document.getElementById('edit-category').value = category;
+        document.getElementById('modal-category').value = category;
         document.getElementById('modal-name').value = item.name;
-        document.getElementById('modal-payer').value = item.payer || '';
+        
+        populatePayerSelects();
+        const select = document.getElementById('modal-payer-select');
+        const customInput = document.getElementById('modal-payer-custom');
+        if (!item.payer) {
+            select.value = '';
+            customInput.style.display = 'none';
+        } else {
+            select.value = item.payer;
+            customInput.style.display = 'none';
+        }
+        
         document.getElementById('modal-url').value = item.url;
         document.getElementById('modal-price').value = item.price;
         document.getElementById('modal-inst').value = item.installments;
@@ -405,7 +474,6 @@
 
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-    // 使用 async 確保發送請求的順序正確
     async function saveEdit() {
         const id = parseInt(document.getElementById('edit-id').value);
         const oldCategory = document.getElementById('edit-category').value;
@@ -415,27 +483,26 @@
         if (itemIndex > -1) {
             const item = data[oldCategory][itemIndex];
             item.name = document.getElementById('modal-name').value;
-            item.payer = document.getElementById('modal-payer').value.trim();
+            
+            let payer = document.getElementById('modal-payer-select').value;
+            if (payer === 'CUSTOM') {
+                payer = document.getElementById('modal-payer-custom').value.trim();
+            }
+            item.payer = payer;
+            
             item.url = document.getElementById('modal-url').value;
             item.price = parseFloat(document.getElementById('modal-price').value);
             item.installments = parseInt(document.getElementById('modal-inst').value);
 
-            // 判斷是否需要移動分類
             if (oldCategory !== newCategory) {
-                // 從舊陣列移除，並加入新陣列
                 data[oldCategory].splice(itemIndex, 1);
                 data[newCategory].push(item);
-                
-                // 為了相容 GAS 後端：觸發「刪除舊的」與「新增到新的」
-                // 先關閉視窗與重繪畫面，讓使用者感覺瞬間完成
                 closeModal('editModal');
                 render();
                 
-                // 背景執行網路請求，避免 race condition
                 await syncToCloud('DELETE', oldCategory, { id: item.id });
                 await syncToCloud('ADD', newCategory, item);
             } else {
-                // 沒有改變分類，直接走一般的 UPDATE
                 syncToCloud('UPDATE', oldCategory, item);
                 closeModal('editModal');
                 render();

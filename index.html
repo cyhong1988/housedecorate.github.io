@@ -35,6 +35,60 @@
         header { text-align: center; margin-bottom: 20px; }
         h1 { font-weight: 300; letter-spacing: 2px; color: var(--primary-color); margin-bottom: 5px; font-size: 1.4rem; }
 
+        .category-progress-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        .progress-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .progress-labels {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .progress-labels-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .progress-bar-wrapper {
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            display: flex;
+            overflow: hidden;
+        }
+        .progress-segment {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        /* 定義四個類別的顏色 */
+        .segment-eng { background-color: #5D9CEC; }
+        .segment-smart { background-color: #967ADC; } /* 智能影音(紫) */
+        .segment-app { background-color: #FC6E51; }
+        .segment-fur { background-color: #48CFAD; }
+        
+        .label-eng { color: #5D9CEC; }
+        .label-smart { color: #967ADC; }
+        .label-app { color: #FC6E51; }
+        .label-fur { color: #48CFAD; }
+
         .payer-stats-container {
             display: none;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -69,7 +123,6 @@
         .summary-item { display: flex; flex-direction: column; }
         .span-3 { grid-column: span 3; }
         .span-6 { grid-column: span 6; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 0; }
-        .span-2 { grid-column: span 2; }
 
         .summary-item .label { font-size: 0.65rem; opacity: 0.8; margin-bottom: 3px; }
         .summary-item .amount { font-size: 1rem; font-weight: 600; color: var(--accent-color); }
@@ -160,6 +213,7 @@
             <label>分類 (可快速移動項目)</label>
             <select id="modal-category">
                 <option value="engineering">🏗️ 裝修工程</option>
+                <option value="smart">🔌 智能家居暨影音</option>
                 <option value="appliances">📺 家電設備</option>
                 <option value="furniture">🛋️ 傢俱軟裝</option>
             </select>
@@ -197,7 +251,7 @@
     <div class="modal-content">
         <div style="font-weight:600; border-bottom:1px solid #eee; padding-bottom:8px;">➕ 新增項目</div>
         <input type="hidden" id="add-category">
-        <div class="modal-field"><label>名稱</label><input type="text" id="new-name" placeholder="例如：沙發"></div>
+        <div class="modal-field"><label>名稱</label><input type="text" id="new-name" placeholder="例如：智慧開關"></div>
         
         <div class="modal-field">
             <label>支付人 (選填)</label>
@@ -232,6 +286,29 @@
 
     <div class="sync-status" id="sync-status">正在載入數據...</div>
 
+    <!-- 分類佔比進度條區塊 -->
+    <div class="category-progress-container" id="category-progress-container" style="display: none;">
+        <div class="progress-header">📊 總花費分類佔比分析</div>
+        <div class="progress-labels">
+            <!-- 第一行：裝修工程 ＆ 智能影音 -->
+            <div class="progress-labels-row">
+                <span class="label-eng">🏗️ 裝修工程: <span id="bar-label-eng">0%</span></span>
+                <span class="label-smart">🔌 智能影音: <span id="bar-label-smart">0%</span></span>
+            </div>
+            <!-- 第二行：家電設備 ＆ 傢俱軟裝 -->
+            <div class="progress-labels-row">
+                <span class="label-app">📺 家電設備: <span id="bar-label-app">0%</span></span>
+                <span class="label-fur">🛋️ 傢俱軟裝: <span id="bar-label-fur">0%</span></span>
+            </div>
+        </div>
+        <div class="progress-bar-wrapper">
+            <div id="bar-eng" class="progress-segment segment-eng" style="width: 0%;"></div>
+            <div id="bar-smart" class="progress-segment segment-smart" style="width: 0%;"></div>
+            <div id="bar-app" class="progress-segment segment-app" style="width: 0%;"></div>
+            <div id="bar-fur" class="progress-segment segment-fur" style="width: 0%;"></div>
+        </div>
+    </div>
+
     <div class="payer-stats-container" id="payer-stats-container"></div>
 
     <div class="summary-dashboard">
@@ -253,15 +330,20 @@
             <div class="amount" id="pending-amount">$ 0</div>
         </div>
         
-        <div class="summary-item span-2" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+        <!-- 改為 span-3 以符合 2x2 網格排版 -->
+        <div class="summary-item span-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             <div class="label">🏗️ 工程佔比</div>
             <div class="amount" id="percent-eng">0%</div>
         </div>
-        <div class="summary-item span-2" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+        <div class="summary-item span-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+            <div class="label">🔌 智能影音佔比</div>
+            <div class="amount" id="percent-smart">0%</div>
+        </div>
+        <div class="summary-item span-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             <div class="label">📺 家電佔比</div>
             <div class="amount" id="percent-app">0%</div>
         </div>
-        <div class="summary-item span-2" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+        <div class="summary-item span-3" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             <div class="label">🛋️ 軟裝佔比</div>
             <div class="amount" id="percent-fur">0%</div>
         </div>
@@ -270,6 +352,7 @@
     <script>
         const sections = [
             { id: 'engineering', title: '🏗️ 裝修工程' },
+            { id: 'smart', title: '🔌 智能家居暨影音工程' },
             { id: 'appliances', title: '📺 家電設備' },
             { id: 'furniture', title: '🛋️ 傢俱軟裝' }
         ];
@@ -308,7 +391,9 @@
 
 <script>
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0MvelMerRnzM8v7yN7RA-OcA4e0pSl9MO20FOSDJIbGml2yCiAz1qxSpvnVfDucbb/exec';
-    let data = { engineering: [], appliances: [], furniture: [] };
+    
+    // 初始化時加上 smart 分類
+    let data = { engineering: [], smart: [], appliances: [], furniture: [] };
 
     async function initData() {
         const savedBudget = localStorage.getItem('decoration_budget_goal');
@@ -317,7 +402,7 @@
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL);
             const cloudData = await response.json();
-            data = { engineering: [], appliances: [], furniture: [] };
+            data = { engineering: [], smart: [], appliances: [], furniture: [] };
             cloudData.forEach(item => {
                 if (data[item.category]) {
                     
@@ -347,7 +432,7 @@
     }
 
     function initSortable() {
-        ['engineering', 'appliances', 'furniture'].forEach(category => {
+        ['engineering', 'smart', 'appliances', 'furniture'].forEach(category => {
             const el = document.querySelector(`#table-${category} tbody`);
             Sortable.create(el, {
                 animation: 150, handle: '.drag-handle',
@@ -375,9 +460,8 @@
         } catch (e) {}
     }
 
-    // 更新：取得所有曾填寫過的支付人（移除原本預設的老公、老婆）
     function getUniquePayers() {
-        const payers = new Set(); // 乾淨的 Set，只吃實際資料
+        const payers = new Set();
         for (let cat in data) {
             data[cat].forEach(item => {
                 if (item.payer) payers.add(item.payer);
@@ -529,7 +613,8 @@
     function formatCurrency(num) { return '$' + Math.round(num).toLocaleString(); }
 
     function updateTotalsOnly() {
-        let grandTotal = 0, paidTotal = 0, subMap = { engineering: 0, appliances: 0, furniture: 0 };
+        let grandTotal = 0, paidTotal = 0;
+        let subMap = { engineering: 0, smart: 0, appliances: 0, furniture: 0 };
         let payerStats = {}; 
         
         for (let cat in data) {
@@ -583,13 +668,47 @@
         remEl.style.color = remain < 0 ? 'var(--danger)' : 'var(--accent-color)';
         
         if (grandTotal > 0) {
-            document.getElementById('percent-eng').innerText = Math.round((subMap.engineering / grandTotal) * 100) + '%';
-            document.getElementById('percent-app').innerText = Math.round((subMap.appliances / grandTotal) * 100) + '%';
-            document.getElementById('percent-fur').innerText = Math.round((subMap.furniture / grandTotal) * 100) + '%';
+            let pEng = Math.round((subMap.engineering / grandTotal) * 100);
+            let pSmart = Math.round((subMap.smart / grandTotal) * 100);
+            let pApp = Math.round((subMap.appliances / grandTotal) * 100);
+            let pFur = Math.round((subMap.furniture / grandTotal) * 100);
+
+            // 確保四個項目相加等於 100% (防誤差)
+            let totalP = pEng + pSmart + pApp + pFur;
+            if (totalP !== 100 && totalP > 0) {
+                let diff = 100 - totalP;
+                let maxKey = 'pEng', maxVal = pEng;
+                if(pSmart > maxVal) { maxVal = pSmart; maxKey = 'pSmart'; }
+                if(pApp > maxVal) { maxVal = pApp; maxKey = 'pApp'; }
+                if(pFur > maxVal) { maxVal = pFur; maxKey = 'pFur'; }
+                
+                if(maxKey === 'pEng') pEng += diff;
+                else if(maxKey === 'pSmart') pSmart += diff;
+                else if(maxKey === 'pApp') pApp += diff;
+                else pFur += diff;
+            }
+
+            document.getElementById('percent-eng').innerText = pEng + '%';
+            document.getElementById('percent-smart').innerText = pSmart + '%';
+            document.getElementById('percent-app').innerText = pApp + '%';
+            document.getElementById('percent-fur').innerText = pFur + '%';
+
+            document.getElementById('category-progress-container').style.display = 'block';
+            document.getElementById('bar-eng').style.width = pEng + '%';
+            document.getElementById('bar-smart').style.width = pSmart + '%';
+            document.getElementById('bar-app').style.width = pApp + '%';
+            document.getElementById('bar-fur').style.width = pFur + '%';
+            
+            document.getElementById('bar-label-eng').innerText = `${formatCurrency(subMap.engineering)} (${pEng}%)`;
+            document.getElementById('bar-label-smart').innerText = `${formatCurrency(subMap.smart)} (${pSmart}%)`;
+            document.getElementById('bar-label-app').innerText = `${formatCurrency(subMap.appliances)} (${pApp}%)`;
+            document.getElementById('bar-label-fur').innerText = `${formatCurrency(subMap.furniture)} (${pFur}%)`;
         } else {
             document.getElementById('percent-eng').innerText = '0%';
+            document.getElementById('percent-smart').innerText = '0%';
             document.getElementById('percent-app').innerText = '0%';
             document.getElementById('percent-fur').innerText = '0%';
+            document.getElementById('category-progress-container').style.display = 'none';
         }
     }
 
